@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNA PDF Editor - Beta 1</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --sna-red: #dc3545;
+            --sna-red-hover: #b02a37;
+            --sna-blue: #0d6efd;
+            --sna-blue-dark: #0a58ca;
+            --sna-bg: #f8f9fa;
+        }
+
+        body { 
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            color: #212529;
+        }
+
+        .main-card { 
+            border: 1px solid rgba(220, 53, 69, 0.15); 
+            border-radius: 20px; 
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08); 
+            background: #ffffff; 
+        }
+
+        .app-logo { 
+            width: 80px; 
+            height: 80px; 
+            background: linear-gradient(135deg, var(--sna-red) 0%, var(--sna-blue) 100%); 
+            color: #ffffff; 
+            border-radius: 18px; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center; 
+            font-size: 22px; 
+            font-weight: 900; 
+            box-shadow: 0 6px 18px rgba(220, 53, 69, 0.3); 
+            margin: 0 auto 15px auto; 
+            letter-spacing: 1px; 
+            line-height: 1.1;
+        }
+        .app-logo .logo-sub {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            opacity: 0.9;
+        }
+
+        .custom-tab-btn { 
+            border-radius: 12px; 
+            font-weight: 600; 
+            color: #495057; 
+            background: #f1f3f5; 
+            border: 1px solid #dee2e6; 
+            padding: 10px 16px; 
+            transition: all 0.3s ease; 
+            cursor: pointer; 
+            font-size: 13px; 
+        }
+
+        .custom-tab-btn:hover {
+            background-color: #e9ecef;
+            color: var(--sna-red);
+        }
+
+        .custom-tab-btn.active-tab { 
+            background: linear-gradient(135deg, var(--sna-red) 0%, var(--sna-red-hover) 100%) !important; 
+            color: #ffffff !important; 
+            border-color: var(--sna-red) !important;
+            box-shadow: 0 4px 14px rgba(220, 53, 69, 0.35); 
+        }
+
+        #pdf-container, #edit-pdf-container, #wm-preview-container { 
+            position: relative; 
+            display: inline-block; 
+            border: 2px dashed #ced4da; 
+            background: #ffffff; 
+            margin-top: 15px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04); 
+        }
+
+        .draggable-img { 
+            position: absolute; 
+            cursor: move; 
+            border: 2px dashed transparent; 
+            background: transparent; 
+            padding: 2px; 
+            user-select: none; 
+            border-radius: 4px; 
+            z-index: 5; 
+            min-width: 50px; 
+            min-height: 30px; 
+            box-sizing: border-box;
+        }
+        .draggable-img:hover,
+        .draggable-img.active-focus {
+            border: 2px dashed var(--sna-blue);
+        }
+        .draggable-img img { 
+            display: block; 
+            width: 100%; 
+            height: 100%; 
+            pointer-events: none; 
+            object-fit: contain;
+        }
+        .resizer-se { 
+            position: absolute; 
+            width: 14px; 
+            height: 14px; 
+            background: var(--sna-blue); 
+            border: 2px solid #ffffff; 
+            border-radius: 50%; 
+            right: -7px; 
+            bottom: -7px; 
+            cursor: se-resize; 
+            z-index: 25; 
+            opacity: 0; 
+            transition: opacity 0.2s ease; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+        }
+        .draggable-img:hover .resizer-se, 
+        .draggable-img.active-focus .resizer-se { 
+            opacity: 1; 
+        }
+
+        .delete-btn { 
+            position: absolute; 
+            top: -8px; 
+            right: -8px; 
+            background: var(--sna-red); 
+            color: #ffffff; 
+            border: 1.5px solid #ffffff; 
+            border-radius: 50%; 
+            width: 20px; 
+            height: 20px; 
+            font-size: 11px; 
+            line-height: 17px; 
+            text-align: center; 
+            cursor: pointer; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.25); 
+            z-index: 30; 
+            opacity: 0;
+            transition: opacity 0.2s ease, background-color 0.2s ease;
+        }
+        .delete-btn:hover { background: var(--sna-red-hover); }
+        .draggable-img:hover .delete-btn,
+        .draggable-img.active-focus .delete-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .draggable-text-box { 
+            position: absolute; 
+            cursor: move; 
+            border: 2px dashed transparent; 
+            background: transparent; 
+            padding: 4px; 
+            user-select: none; 
+            border-radius: 6px; 
+            z-index: 20; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            transform-origin: center center; 
+            transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease; 
+        }
+        .draggable-text-box.active-focus { 
+            border: 2px dashed var(--sna-red) !important; 
+            background: rgba(255, 255, 255, 0.95) !important; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important; 
+        }
+        .draggable-text-box textarea { 
+            border: none; 
+            background: transparent; 
+            resize: none; 
+            outline: none; 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            font-size: 14px; 
+            color: var(--sna-red); 
+            font-weight: 600; 
+            width: 100%; 
+            height: 100%; 
+            line-height: 1.2; 
+            text-align: left;
+        }
+        
+        .text-delete-btn {
+            position: absolute; 
+            top: -8px; 
+            right: -8px; 
+            background: var(--sna-red); 
+            color: #ffffff; 
+            border: 1.5px solid #ffffff; 
+            border-radius: 50%; 
+            width: 20px; 
+            height: 20px; 
+            font-size: 11px; 
+            line-height: 17px; 
+            text-align: center; 
+            cursor: pointer; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.25); 
+            z-index: 30; 
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .draggable-text-box.active-focus .text-delete-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .text-resizer-se { 
+            position: absolute; 
+            width: 14px; 
+            height: 14px; 
+            background: var(--sna-blue); 
+            border: 2px solid #ffffff; 
+            border-radius: 50%; 
+            right: -7px; 
+            bottom: -7px; 
+            cursor: se-resize; 
+            z-index: 25; 
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .text-rotate-handle { 
+            position: absolute; 
+            width: 14px; 
+            height: 14px; 
+            background: #ffc107; 
+            border: 2px solid #ffffff; 
+            border-radius: 50%; 
+            top: -14px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            cursor: grab; 
+            z-index: 25; 
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .draggable-text-box.active-focus .text-resizer-se, 
+        .draggable-text-box.active-focus .text-rotate-handle { 
+            opacity: 1; 
+            pointer-events: auto; 
+        }
+
+        .custom-file-box { 
+            border: 2px dashed #f1aeb5; 
+            background-color: #fff8f8; 
+            border-radius: 12px; 
+            padding: 18px; 
+            transition: all 0.3s; 
+        }
+        .custom-file-box:hover { 
+            border-color: var(--sna-red); 
+            background-color: #fef2f2; 
+        }
+
+        #strike-canvas { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            z-index: 10; 
+            cursor: crosshair; 
+        }
+
+        .editor-toolbar { 
+            background: #ffffff; 
+            border: 1px solid #e9ecef; 
+            padding: 12px 18px; 
+            border-radius: 14px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 15px; 
+            flex-wrap: wrap; 
+            margin-bottom: 15px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03); 
+        }
+
+        #page-manage-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
+            gap: 15px; 
+            margin-top: 15px; 
+        }
+        .page-manage-card { 
+            background: #ffffff; 
+            border: 2px solid #e9ecef; 
+            border-radius: 12px; 
+            padding: 10px; 
+            text-align: center; 
+            position: relative; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
+        }
+        .page-thumbnail { 
+            width: 100%; 
+            height: 140px; 
+            object-fit: contain; 
+            background: #ffffff; 
+            border: 1px solid #dee2e6; 
+            border-radius: 8px; 
+            margin-bottom: 8px; 
+        }
+        .page-badge { 
+            position: absolute; 
+            top: 8px; 
+            left: 8px; 
+            background: var(--sna-blue); 
+            color: #ffffff; 
+            font-size: 11px; 
+            font-weight: 700; 
+            padding: 2px 8px; 
+            border-radius: 20px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
+        }
+        .page-delete-btn { 
+            position: absolute; 
+            top: 8px; 
+            right: 8px; 
+            background: var(--sna-red); 
+            color: #ffffff; 
+            border: none; 
+            border-radius: 50%; 
+            width: 24px; 
+            height: 24px; 
+            font-size: 12px; 
+            line-height: 22px; 
+            text-align: center; 
+            cursor: pointer; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
+        }
+        .page-delete-btn:hover { background: var(--sna-red-hover); }
+
+        #merge-file-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
+            gap: 15px; 
+            margin-top: 15px; 
+        }
+        .merge-card { 
+            background: #ffffff; 
+            border: 2px solid #e9ecef; 
+            border-radius: 12px; 
+            padding: 10px; 
+            text-align: center; 
+            cursor: grab; 
+            position: relative; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
+            transition: all 0.2s ease; 
+        }
+        .merge-card:active { cursor: grabbing; }
+        .merge-card.dragging { opacity: 0.4; border: 2px dashed var(--sna-red); }
+        .merge-card-over { border-color: var(--sna-red); background: #fff8f8; transform: scale(1.03); }
+        .merge-thumbnail { width: 100%; height: 130px; object-fit: contain; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; margin-bottom: 8px; }
+        .merge-badge { position: absolute; top: 8px; left: 8px; background: var(--sna-blue); color: #ffffff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .merge-remove-btn { position: absolute; top: 8px; right: 8px; background: var(--sna-red); color: #ffffff; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; line-height: 22px; text-align: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .merge-remove-btn:hover { background: var(--sna-red-hover); }
+        .merge-filename { font-size: 12px; font-weight: 600; color: #343a40; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        #custom-popup-overlay { 
+            position: fixed; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0, 0, 0, 0.45); 
+            backdrop-filter: blur(4px); 
+            display: none; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 9999; 
+        }
+        .custom-popup-box { 
+            background: #ffffff; 
+            padding: 30px; 
+            border-radius: 20px; 
+            text-align: center; 
+            max-width: 400px; 
+            width: 90%; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2); 
+            animation: popupScale 0.25s ease-out; 
+        }
+        @keyframes popupScale { 
+            0% { transform: scale(0.8); opacity: 0; } 
+            100% { transform: scale(1); opacity: 1; } 
+        }
+        .popup-icon { font-size: 50px; margin-bottom: 15px; }
+
+        footer { 
+            font-size: 13px; 
+            color: #6c757d; 
+            text-align: center; 
+            padding: 20px 0; 
+            background: #ffffff; 
+            border-top: 1px solid #e9ecef; 
+            width: 100%; 
+        }
+
+        .btn-sna-red {
+            background-color: var(--sna-red);
+            color: #ffffff !important;
+            border: none;
+        }
+        .btn-sna-red:hover {
+            background-color: var(--sna-red-hover);
+            color: #ffffff !important;
+        }
+
+        .form-range::-webkit-slider-thumb {
+            background: var(--sna-red);
+        }
+        .form-range::-moz-range-thumb {
+            background: var(--sna-red);
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5 my-auto">
+        <div class="row justify-content-center">
+            <div class="col-md-11">
+                <div class="card main-card p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <div class="app-logo">
+                            <span>SNA</span>
+                            <span class="logo-sub">PDF</span>
+                        </div>
+                        <h2 class="fw-bold text-dark mb-1">SNA PDF Editor <span class="badge bg-danger fs-6 align-middle">Beta 1</span></h2>
+                        <p class="text-muted small">Every tool you need to use PDFs, at your fingertips. All are 100% FREE and easy to use!</p>
+                        
+                        <div class="d-flex justify-content-center gap-2 mt-4 flex-wrap">
+                            <button type="button" class="custom-tab-btn active-tab" id="btn-tab-edit" data-tab="edit">
+                                <i class="fa-solid fa-pen-to-square me-1"></i> Tambah Teks & Coret
+                            </button>
+                            <button type="button" class="custom-tab-btn" id="btn-tab-pages" data-tab="pages">
+                                <i class="fa-solid fa-copy me-1"></i> Manajemen Halaman
+                            </button>
+                            <button type="button" class="custom-tab-btn" id="btn-tab-sign" data-tab="sign">
+                                <i class="fa-solid fa-signature me-1"></i> Tanda Tangan
+                            </button>
+                            <button type="button" class="custom-tab-btn" id="btn-tab-watermark" data-tab="watermark">
+                                <i class="fa-solid fa-stamp me-1"></i> Watermark
+                            </button>
+                            <button type="button" class="custom-tab-btn" id="btn-tab-merge" data-tab="merge">
+                                <i class="fa-solid fa-object-ungroup me-1"></i> Gabung PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TAB 1: TAMBAH TEKS & CORET -->
+                    <div id="content-tab-edit">
+                        <div class="custom-file-box mb-4">
+                            <label class="form-label fw-bold text-danger"><i class="fa-regular fa-file-pdf me-2"></i>Pilih File PDF untuk Tambah Teks & Coret</label>
+                            <input class="form-control" type="file" id="editPdfFile" accept="application/pdf">
+                        </div>
+                        <button type="button" class="btn btn-sna-red btn-lg w-100 shadow-sm py-3 fw-semibold mb-3" id="btn-load-edit">
+                            <i class="fa-solid fa-wand-magic-sparkles me-2"></i> Muat Dokumen & Buka Editor
+                        </button>
+
+                        <div id="edit-workspace" style="display:none;" class="text-center mt-3">
+                            <hr class="my-4">
+                            <h5 class="text-secondary fw-bold">Workspace Tambah Teks & Coret</h5>
+                            <p class="text-muted small">💡 <strong>Coret Teks:</strong> Drag mouse pada teks. <strong>Tambah Teks:</strong> Klik tombol Tambah, atur ukuran font, warna, atau putar (rotate).</p>
+                            
+                            <div class="editor-toolbar">
+                                <button type="button" class="btn btn-success btn-sm px-3 fw-semibold shadow-sm" id="btn-add-text">
+                                    <i class="fa-solid fa-plus me-1"></i> Tambah Teks
+                                </button>
+
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="small fw-semibold text-secondary"><i class="fa-solid fa-text-height me-1"></i>Ukuran:</span>
+                                    <select id="globalFontSize" class="form-select form-select-sm" style="width: 75px;">
+                                        <option value="12">12 px</option>
+                                        <option value="14" selected>14 px</option>
+                                        <option value="16">16 px</option>
+                                        <option value="18">18 px</option>
+                                        <option value="20">20 px</option>
+                                        <option value="24">24 px</option>
+                                        <option value="28">28 px</option>
+                                        <option value="32">32 px</option>
+                                    </select>
+                                </div>
+
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="small fw-semibold text-secondary"><i class="fa-solid fa-palette me-1"></i>Warna Teks:</span>
+                                    <input type="color" id="globalTextColor" class="form-control form-control-color form-control-sm" value="#dc3545" title="Pilih Warna Teks" style="width: 38px; cursor: pointer;">
+                                </div>
+
+                                <div class="vr mx-1"></div>
+
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="small fw-semibold text-secondary"><i class="fa-solid fa-highlighter me-1"></i>Warna Coretan:</span>
+                                    <input type="color" id="globalStrikeColor" class="form-control form-control-color form-control-sm" value="#dc3545" title="Pilih Warna Coretan" style="width: 38px; cursor: pointer;">
+                                </div>
+
+                                <div class="vr mx-1"></div>
+
+                                <button type="button" class="btn btn-outline-danger btn-sm px-2 fw-semibold" id="btn-undo" title="Undo aksi terakhir">
+                                    <i class="fa-solid fa-rotate-left me-1"></i> Undo
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-2 fw-semibold" id="btn-reset-edits" title="Reset semua">
+                                    <i class="fa-solid fa-trash-can me-1"></i> Reset
+                                </button>
+                            </div>
+
+                            <div style="overflow: auto; max-height: 550px; text-align: center; border-radius: 12px;" class="shadow-sm">
+                                <div id="edit-pdf-container">
+                                    <canvas id="edit-pdf-canvas"></canvas>
+                                    <canvas id="strike-canvas"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 d-flex justify-content-center gap-3">
+                                <button type="button" class="btn btn-success btn-lg px-5 shadow-sm fw-semibold" id="btn-save-edit">
+                                    <i class="fa-solid fa-download me-2"></i> Simpan Koreksi & Unduh PDF
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-lg px-4 shadow-sm" id="btn-cancel-edit">
+                                    <i class="fa-solid fa-xmark me-2"></i> Batalkan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: MANAJEMEN HALAMAN -->
+                    <div id="content-tab-pages" style="display: none;">
+                        <div class="custom-file-box mb-4">
+                            <label class="form-label fw-bold text-danger"><i class="fa-regular fa-file-pdf me-2"></i>Pilih File PDF untuk Manajemen Halaman</label>
+                            <input class="form-control" type="file" id="managePdfFile" accept="application/pdf">
+                        </div>
+
+                        <button type="button" class="btn btn-sna-red btn-lg w-100 shadow-sm py-3 fw-semibold mb-3" id="btn-load-manager">
+                            <i class="fa-solid fa-layer-group me-2"></i> Muat Dokumen & Kelola Halaman
+                        </button>
+
+                        <div id="page-manager-workspace" style="display:none;" class="mt-3">
+                            <hr class="my-4">
+                            <div class="row g-4 align-items-center mb-4 bg-light p-3 rounded-3 border">
+                                <div class="col-md-12">
+                                    <h5 class="fw-bold text-dark mb-1"><i class="fa-solid fa-circle-plus text-success me-2"></i>Sisipkan Halaman Baru (Insert Page)</h5>
+                                    <p class="text-muted small mb-2">Pilih tipe halaman yang ingin disisipkan, tentukan posisi penyisipannya, lalu klik tombol tambah.</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-semibold">Tipe Halaman:</label>
+                                    <select id="insertType" class="form-select form-select-sm">
+                                        <option value="blank">Halaman Kosong</option>
+                                        <option value="pdf">Dari File PDF Lain</option>
+                                        <option value="image">Dari Gambar (JPG/PNG)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4" id="insertSourceWrapper" style="display: none;">
+                                    <label class="form-label small fw-semibold" id="insertSourceLabel">Pilih File:</label>
+                                    <input type="file" id="insertSourceFile" class="form-control form-control-sm" accept="application/pdf, image/*">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-semibold">Sisipkan Setelah Halaman:</label>
+                                    <select id="insertAfterIndex" class="form-select form-select-sm"></select>
+                                </div>
+                                <div class="col-md-2 d-grid">
+                                    <label class="form-label small fw-semibold">&nbsp;</label>
+                                    <button type="button" class="btn btn-success btn-sm fw-semibold" id="btn-execute-insert">
+                                        <i class="fa-solid fa-plus me-1"></i> Sisipkan
+                                    </button>
+                                </div>
+                            </div>
+
+                            <h5 class="fw-semibold text-secondary mb-2"><i class="fa-solid fa-list-check me-2"></i>Daftar Halaman Dokumen Saat Ini:</h5>
+                            <p class="text-muted small">💡 Anda dapat menghapus halaman tertentu dengan mengklik tombol silang merah pada thumbnail halaman.</p>
+
+                            <div id="page-manage-grid"></div>
+
+                            <div class="mt-4 d-flex justify-content-center gap-3">
+                                <button type="button" class="btn btn-success btn-lg px-5 shadow-sm fw-semibold" id="btn-save-manager">
+                                    <i class="fa-solid fa-download me-2"></i> Simpan Perubahan Halaman & Unduh
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-lg px-4 shadow-sm" id="btn-cancel-manager">
+                                    <i class="fa-solid fa-xmark me-2"></i> Batalkan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: TANDA TANGAN -->
+                    <div id="content-tab-sign" style="display: none;">
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <div class="custom-file-box">
+                                    <label class="form-label fw-bold text-danger"><i class="fa-regular fa-file-pdf me-2"></i>1. Pilih File PDF</label>
+                                    <input class="form-control" type="file" id="pdfFile" accept="application/pdf">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="custom-file-box">
+                                    <label class="form-label fw-bold text-danger"><i class="fa-regular fa-images me-2"></i>2. Pilih Gambar Tanda Tangan</label>
+                                    <input class="form-control" type="file" id="sigFiles" accept="image/*" multiple>
+                                    <div class="form-text text-muted small mt-1">Disarankan PNG transparan agar hasil rapi.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-sna-red btn-lg w-100 shadow-sm py-3 fw-semibold mb-3" id="btn-load-sign">
+                            <i class="fa-solid fa-wand-magic-sparkles me-2"></i> Muat Dokumen & Atur Posisi
+                        </button>
+
+                        <div id="workspace" style="display:none;" class="text-center mt-3">
+                            <hr class="my-4">
+                            <h5 class="text-secondary fw-bold">Atur Posisi & Ukuran Tanda Tangan</h5>
+                            <p class="text-muted small">💡 <strong>Geser kotak</strong> untuk memindahkan letak. <strong>Tarik titik biru di pojok kanan bawah</strong> untuk meresize. Klik <strong>tombol merah (×)</strong> untuk menghapus TTD.</p>
+                            
+                            <div style="overflow: auto; max-height: 550px; text-align: center; border-radius: 12px;" class="shadow-sm">
+                                <div id="pdf-container">
+                                    <canvas id="pdf-canvas"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 d-flex justify-content-center gap-3">
+                                <button type="button" class="btn btn-success btn-lg px-5 shadow-sm fw-semibold" id="btn-save-sign">
+                                    <i class="fa-solid fa-download me-2"></i> Tempel & Unduh PDF
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-lg px-4 shadow-sm" id="btn-cancel-sign">
+                                    <i class="fa-solid fa-xmark me-2"></i> Batalkan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB WATERMARK DENGAN TOMBOL BATAL -->
+                    <div id="content-tab-watermark" style="display: none;">
+                        <div class="custom-file-box mb-4">
+                            <label class="form-label fw-bold text-danger"><i class="fa-regular fa-file-pdf me-2"></i>Pilih File PDF untuk Diberi Watermark</label>
+                            <input class="form-control" type="file" id="wmPdfFile" accept="application/pdf">
+                        </div>
+
+                        <div class="card p-4 border shadow-sm mb-4 bg-light">
+                            <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-sliders me-2"></i>Konfigurasi Watermark</h5>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Tipe Watermark:</label>
+                                <div class="d-flex gap-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="wmType" id="wmTypeTex" value="text" checked>
+                                        <label class="form-check-label fw-semibold" for="wmTypeTex">Teks</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="wmType" id="wmTypeImg" value="image">
+                                        <label class="form-check-label fw-semibold" for="wmTypeImg">Gambar / Logo</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="wmTextOptions" class="row g-3 mb-3">
+                                <div class="col-md-12">
+                                    <label class="form-label small fw-semibold">Teks Watermark:</label>
+                                    <input type="text" id="wmTextValue" class="form-control form-control-sm" placeholder="ketik teks disini">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">Pilih Font:</label>
+                                    <select id="wmFont" class="form-select form-select-sm">
+                                        <option value="Helvetica">Helvetica (Sans-Serif)</option>
+                                        <option value="TimesRoman">Times New Roman (Serif)</option>
+                                        <option value="Courier">Courier (Monospace)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-semibold">Ukuran Font (Size):</label>
+                                    <input type="number" id="wmFontSize" class="form-control form-control-sm" value="48" min="8" max="150">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-semibold">Warna:</label>
+                                    <input type="color" id="wmColor" class="form-control form-control-color form-control-sm w-100" value="#ff0000">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-semibold">Tipe (Style):</label>
+                                    <select id="wmStyle" class="form-select form-select-sm">
+                                        <option value="normal">Normal</option>
+                                        <option value="bold" selected>Bold (Tebal)</option>
+                                        <option value="italic">Italic (Miring)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div id="wmImageOptions" class="row g-3 mb-3" style="display: none;">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Pilih Gambar Watermark (PNG/JPG):</label>
+                                    <input type="file" id="wmImageFile" class="form-control form-control-sm" accept="image/*">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Ukuran Gambar (% dari lebar halaman): <span id="imgSizeDisplay" class="text-danger fw-bold">50%</span></label>
+                                    <input type="range" class="form-range" id="wmImageSize" min="10" max="100" step="5" value="50">
+                                    <div class="d-flex justify-content-between small text-muted" style="font-size: 10px;">
+                                        <span>Kecil (10%)</span>
+                                        <span>Besar (100%)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-semibold">Rotasi (Derajat):</label>
+                                    <select id="wmRotation" class="form-select form-select-sm">
+                                        <option value="0" selected>0° (Normal)</option>
+                                        <option value="45">45° (Miring Kanan)</option>
+                                        <option value="-45">-45° (Miring Kiri)</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-semibold">
+                                        Transparansi (Opacity): 
+                                        <span id="opacityDisplay" class="text-danger fw-bold">25%</span>
+                                    </label>
+                                    <input type="range" class="form-range" id="wmOpacity" min="0.05" max="1.0" step="0.05" value="0.25">
+                                    <div class="d-flex justify-content-between small text-muted" style="font-size: 10px;">
+                                        <span>Samar</span>
+                                        <span>Solid</span>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-semibold">Posisi (Positioning):</label>
+                                    <select id="wmPosition" class="form-select form-select-sm">
+                                        <option value="center" selected>Tengah (Center)</option>
+                                        <option value="top">Atas (Top)</option>
+                                        <option value="bottom">Bawah (Bottom)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3" id="wmLayerWrapper">
+                                    <label class="form-label small fw-semibold">Pilih Layer:</label>
+                                    <select id="wmLayer" class="form-select form-select-sm">
+                                        <option value="under" selected>Di Bawah Tulisan (Background)</option>
+                                        <option value="over">Di Atas Tulisan (Foreground)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Dari Halaman ke Halaman (Rentang):</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">Hal</span>
+                                        <input type="number" id="wmPageStart" class="form-control" value="1" min="1">
+                                        <span class="input-group-text">s/d Hal</span>
+                                        <input type="number" id="wmPageEnd" class="form-control" value="1" min="1">
+                                    </div>
+                                    <div class="form-text small text-muted">Tentukan rentang halaman awal dan akhir pemberian watermark.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-3">
+                            <button type="button" class="btn btn-outline-danger btn-lg flex-fill shadow-sm py-3 fw-semibold" id="btn-preview-watermark">
+                                <i class="fa-solid fa-eye me-2"></i> Pratinjau
+                            </button>
+                            <button type="button" class="btn btn-sna-red btn-lg flex-fill shadow-sm py-3 fw-semibold" id="btn-execute-watermark">
+                                <i class="fa-solid fa-download me-2"></i> Terapkan & Unduh
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-lg flex-fill shadow-sm py-3 fw-semibold" id="btn-cancel-watermark">
+                                <i class="fa-solid fa-xmark me-2"></i> Batalkan
+                            </button>
+                        </div>
+
+                        <div id="wm-preview-section" style="display: none;" class="text-center mt-4">
+                            <hr class="my-4">
+                            <h5 class="text-secondary fw-bold">Pratinjau Hasil Watermark (Halaman 1)</h5>
+                            <p class="text-muted small">💡 Periksa hasil pratinjau di bawah. Jika sudah sesuai, klik tombol Unduh PDF di atas.</p>
+                            
+                            <div style="overflow: auto; max-height: 550px; text-align: center; border-radius: 12px;" class="shadow-sm">
+                                <div id="wm-preview-container">
+                                    <canvas id="wm-preview-canvas"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 4: GABUNG PDF -->
+                    <div id="content-tab-merge" style="display: none;">
+                        <div class="custom-file-box mb-3">
+                            <label class="form-label fw-bold text-danger"><i class="fa-solid fa-files me-2"></i>Pilih Beberapa File PDF yang Ingin Digabung</label>
+                            <input class="form-control" type="file" id="mergeFiles" accept="application/pdf" multiple>
+                            <div class="form-text text-muted small mt-1">Pilih beberapa file sekaligus. Tarik & letakkan kartu preview di bawah untuk mengubah urutannya.</div>
+                        </div>
+
+                        <div id="merge-preview-section" style="display: none;" class="mb-4">
+                            <label class="form-label fw-semibold text-secondary"><i class="fa-solid fa-grip me-1"></i> Preview & Urutan Dokumen:</label>
+                            <div id="merge-file-grid"></div>
+                        </div>
+
+                        <button type="button" class="btn btn-sna-red btn-lg w-100 shadow-sm py-3 fw-semibold" id="btn-execute-merge" style="display: none;">
+                            <i class="fa-solid fa-object-merge me-2"></i> Gabungkan & Unduh PDF Sekarang
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">&copy; 2026 <strong>IT Support SNA Medika</strong>. All rights reserved.</div>
+    </footer>
+
+    <div id="custom-popup-overlay">
+        <div class="custom-popup-box">
+            <div id="popup-icon-container" class="popup-icon"></div>
+            <h4 id="popup-title" class="fw-bold mb-2"></h4>
+            <p id="popup-message" class="text-muted mb-4"></p>
+            <div id="popup-btn-container" class="d-flex gap-2 justify-content-center"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    
+    <script>
+        let pdfArrayBuffer = null, pdfDoc = null, scale = 1.5;
+        let selectedMergeFiles = [], draggedIndex = null;
+        let editPdfArrayBuffer = null, editPdfDoc = null, strikeActions = [], actionHistory = [];
+        let currentStrikeColor = '#dc3545', activeTextBox = null, isDrawing = false, startX = 0, startY = 0;
+        let managePdfArrayBuffer = null;
+
+        window.addEventListener('load', function() {
+            if (typeof pdfjsLib === 'undefined' || typeof PDFLib === 'undefined') {
+                console.error("Library PDF gagal dimuat!");
+                alert("Gagal memuat library pemroses PDF. Harap periksa koneksi internet Anda.");
+                return;
+            }
+
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+            document.querySelectorAll('.custom-tab-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    switchTab(this.getAttribute('data-tab'));
+                });
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.draggable-text-box') && !e.target.closest('#btn-add-text') && !e.target.closest('.editor-toolbar')) {
+                    document.querySelectorAll('.draggable-text-box').forEach(b => b.classList.remove('active-focus'));
+                    activeTextBox = null;
+                }
+                if (!e.target.closest('.draggable-img')) {
+                    document.querySelectorAll('.draggable-img').forEach(b => b.classList.remove('active-focus'));
+                }
+            });
+
+            document.getElementById('btn-load-edit').addEventListener('click', function(e) { e.preventDefault(); loadEditPreview(); });
+            document.getElementById('btn-add-text').addEventListener('click', function(e) { e.preventDefault(); addTextBox(); });
+            document.getElementById('globalFontSize').addEventListener('change', updateSelectedTextProperties);
+            document.getElementById('globalTextColor').addEventListener('change', updateSelectedTextProperties);
+            document.getElementById('globalStrikeColor').addEventListener('change', function() { currentStrikeColor = this.value; });
+            document.getElementById('btn-undo').addEventListener('click', function(e) { e.preventDefault(); undoLastAction(); });
+            document.getElementById('btn-reset-edits').addEventListener('click', function(e) { e.preventDefault(); clearAllEdits(); });
+            document.getElementById('btn-save-edit').addEventListener('click', function(e) { e.preventDefault(); processAndDownloadEditedPDF(); });
+            document.getElementById('btn-cancel-edit').addEventListener('click', function(e) { e.preventDefault(); cancelEditProcess(); });
+
+            document.getElementById('btn-load-manager').addEventListener('click', function(e) { e.preventDefault(); loadPageManager(); });
+            document.getElementById('insertType').addEventListener('change', toggleInsertSourceInput);
+            document.getElementById('btn-execute-insert').addEventListener('click', function(e) { e.preventDefault(); executeInsertPage(); });
+            document.getElementById('btn-save-manager').addEventListener('click', function(e) { e.preventDefault(); processAndDownloadManagedPDF(); });
+            document.getElementById('btn-cancel-manager').addEventListener('click', function(e) { e.preventDefault(); cancelPageManageProcess(); });
+
+            document.getElementById('btn-load-sign').addEventListener('click', function(e) { e.preventDefault(); loadPreview(); });
+            document.getElementById('btn-save-sign').addEventListener('click', function(e) { e.preventDefault(); processAndDownloadPDF(); });
+            document.getElementById('btn-cancel-sign').addEventListener('click', function(e) { e.preventDefault(); cancelProcess(); });
+
+            document.querySelectorAll('input[name="wmType"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'text') {
+                        document.getElementById('wmTextOptions').style.display = 'flex';
+                        document.getElementById('wmImageOptions').style.display = 'none';
+                    } else {
+                        document.getElementById('wmTextOptions').style.display = 'none';
+                        document.getElementById('wmImageOptions').style.display = 'flex';
+                    }
+                });
+            });
+            
+            document.getElementById('wmOpacity').addEventListener('input', function() {
+                const val = Math.round(parseFloat(this.value) * 100);
+                document.getElementById('opacityDisplay').textContent = val + '%';
+            });
+
+            document.getElementById('wmImageSize').addEventListener('input', function() {
+                document.getElementById('imgSizeDisplay').textContent = this.value + '%';
+            });
+
+            document.getElementById('btn-preview-watermark').addEventListener('click', function(e) { e.preventDefault(); previewWatermark(); });
+            document.getElementById('btn-execute-watermark').addEventListener('click', function(e) { e.preventDefault(); executeWatermark(); });
+            
+            // TOMBOL BATAL WATERMARK
+            document.getElementById('btn-cancel-watermark').addEventListener('click', function(e) { e.preventDefault(); cancelWatermarkProcess(); });
+
+            document.getElementById('mergeFiles').addEventListener('change', function() { handleMergeFilesSelect(this); });
+            document.getElementById('btn-execute-merge').addEventListener('click', function(e) { e.preventDefault(); mergePDFs(); });
+
+            console.log("SNA PDF Editor - Beta 1 siap digunakan.");
+        });
+
+        function switchTab(tabName) {
+            const tabs = ['edit', 'pages', 'sign', 'watermark', 'merge'];
+            tabs.forEach(t => {
+                const btn = document.getElementById('btn-tab-' + t);
+                const content = document.getElementById('content-tab-' + t);
+                if (btn) btn.classList.remove('active-tab');
+                if (content) content.style.display = 'none';
+            });
+            const activeBtn = document.getElementById('btn-tab-' + tabName);
+            const activeContent = document.getElementById('content-tab-' + tabName);
+            if (activeBtn) activeBtn.classList.add('active-tab');
+            if (activeContent) activeContent.style.display = 'block';
+        }
+
+        function showPopup(type, title, message, buttons = []) {
+            const overlay = document.getElementById('custom-popup-overlay');
+            const iconContainer = document.getElementById('popup-icon-container');
+            const titleEl = document.getElementById('popup-title');
+            const msgEl = document.getElementById('popup-message');
+            const btnContainer = document.getElementById('popup-btn-container');
+
+            if (titleEl) titleEl.innerText = title;
+            if (msgEl) msgEl.innerText = message;
+            if (btnContainer) btnContainer.innerHTML = '';
+
+            if (type === 'loading') {
+                if (iconContainer) iconContainer.innerHTML = '<div class="spinner-border text-danger" style="width: 3rem; height: 3rem;" role="status"></div>';
+            } else if (type === 'success') {
+                if (iconContainer) iconContainer.innerHTML = '<i class="fa-solid fa-circle-check text-success"></i>';
+            } else if (type === 'error') {
+                if (iconContainer) iconContainer.innerHTML = '<i class="fa-solid fa-circle-xmark text-danger"></i>';
+            } else if (type === 'confirm') {
+                if (iconContainer) iconContainer.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-warning"></i>';
+            }
+
+            buttons.forEach(cfg => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `btn ${cfg.class || 'btn-sna-red'} px-4 py-2 w-100 fw-semibold rounded-pill`;
+                btn.innerText = cfg.text;
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    closePopup();
+                    if (typeof cfg.callback === 'function') setTimeout(cfg.callback, 50);
+                };
+                if (btnContainer) btnContainer.appendChild(btn);
+            });
+            if (overlay) overlay.style.display = 'flex';
+        }
+
+        function closePopup() {
+            const overlay = document.getElementById('custom-popup-overlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        // FUNGSI BATAL WATERMARK
+        function cancelWatermarkProcess() {
+            showPopup('confirm', 'Batalkan Watermark?', 'Apakah Anda yakin ingin membatalkan dan mereset semua konfigurasi watermark?', [
+                { 
+                    text: 'Ya, Batalkan', 
+                    class: 'btn-danger', 
+                    callback: function() { 
+                        // Reset semua input watermark
+                        document.getElementById('wmPdfFile').value = '';
+                        document.getElementById('wmTextValue').value = '';
+                        document.getElementById('wmFontSize').value = '48';
+                        document.getElementById('wmColor').value = '#ff0000';
+                        document.getElementById('wmStyle').value = 'bold';
+                        document.getElementById('wmFont').value = 'Helvetica';
+                        document.getElementById('wmImageFile').value = '';
+                        document.getElementById('wmImageSize').value = '50';
+                        document.getElementById('imgSizeDisplay').textContent = '50%';
+                        document.getElementById('wmRotation').value = '0';
+                        document.getElementById('wmOpacity').value = '0.25';
+                        document.getElementById('opacityDisplay').textContent = '25%';
+                        document.getElementById('wmPosition').value = 'center';
+                        document.getElementById('wmLayer').value = 'under';
+                        document.getElementById('wmPageStart').value = '1';
+                        document.getElementById('wmPageEnd').value = '1';
+                        
+                        // Reset tipe watermark ke teks
+                        document.getElementById('wmTypeTex').checked = true;
+                        document.getElementById('wmTextOptions').style.display = 'flex';
+                        document.getElementById('wmImageOptions').style.display = 'none';
+                        
+                        // Sembunyikan preview
+                        document.getElementById('wm-preview-section').style.display = 'none';
+                        
+                        console.log('Konfigurasi watermark telah direset.');
+                    } 
+                },
+                { 
+                    text: 'Lanjutkan', 
+                    class: 'btn-secondary', 
+                    callback: null 
+                }
+            ]);
+        }
+
+        async function generateWatermarkedPdfBytes() {
+            const pdfInput = document.getElementById('wmPdfFile').files[0];
+            if (!pdfInput) { throw new Error('Harap pilih file PDF terlebih dahulu!'); }
+
+            const wmType = document.querySelector('input[name="wmType"]:checked').value;
+            let imgInput = null;
+            if (wmType === 'image') {
+                imgInput = document.getElementById('wmImageFile').files[0];
+                if (!imgInput) { throw new Error('Harap pilih file gambar watermark terlebih dahulu!'); }
+            }
+
+            const arrayBuf = await pdfInput.arrayBuffer();
+            const { PDFDocument, rgb, degrees, StandardFonts } = PDFLib;
+            const pdfDocLib = await PDFDocument.load(arrayBuf);
+            const pages = pdfDocLib.getPages();
+
+            const pStart = parseInt(document.getElementById('wmPageStart').value) || 1;
+            const pEnd = Math.min(parseInt(document.getElementById('wmPageEnd').value) || pages.length, pages.length);
+            const rotationDeg = parseInt(document.getElementById('wmRotation').value) || 0;
+            
+            let opacityVal = parseFloat(document.getElementById('wmOpacity').value);
+            if (isNaN(opacityVal) || opacityVal <= 0) opacityVal = 0.25;
+            if (opacityVal > 1.0) opacityVal = 1.0;
+            if (opacityVal < 0.05) opacityVal = 0.05;
+            
+            const imgSizePercent = parseInt(document.getElementById('wmImageSize').value) || 50;
+            
+            const position = document.getElementById('wmPosition').value;
+            const layer = document.getElementById('wmLayer').value;
+
+            let customFont = null;
+            const fontChoice = document.getElementById('wmFont').value;
+            const fontStyle = document.getElementById('wmStyle').value;
+
+            if (wmType === 'text') {
+                if (fontChoice === 'TimesRoman') {
+                    customFont = fontStyle === 'bold' ? await pdfDocLib.embedFont(StandardFonts.TimesRomanBold) : (fontStyle === 'italic' ? await pdfDocLib.embedFont(StandardFonts.TimesRomanItalic) : await pdfDocLib.embedFont(StandardFonts.TimesRoman));
+                } else if (fontChoice === 'Courier') {
+                    customFont = fontStyle === 'bold' ? await pdfDocLib.embedFont(StandardFonts.CourierBold) : await pdfDocLib.embedFont(StandardFonts.Courier);
+                } else {
+                    customFont = fontStyle === 'bold' ? await pdfDocLib.embedFont(StandardFonts.HelveticaBold) : (fontStyle === 'italic' ? await pdfDocLib.embedFont(StandardFonts.HelveticaOblique) : await pdfDocLib.embedFont(StandardFonts.Helvetica));
+                }
+            }
+
+            let embeddedImg = null;
+            if (wmType === 'image') {
+                const imgBytes = await imgInput.arrayBuffer();
+                if (imgInput.type === 'image/png') {
+                    embeddedImg = await pdfDocLib.embedPng(imgBytes);
+                } else {
+                    embeddedImg = await pdfDocLib.embedJpg(imgBytes);
+                }
+            }
+
+            const textInputElem = document.getElementById('wmTextValue');
+            const textVal = textInputElem.value.trim() !== '' ? textInputElem.value.trim() : (textInputElem.placeholder || 'ketik teks disini');
+            const fontSize = parseInt(document.getElementById('wmFontSize').value) || 48;
+            const colorHex = document.getElementById('wmColor').value || '#ff0000';
+            const col = hexToRgbNormalized(colorHex);
+
+            const rad = (rotationDeg * Math.PI) / 180;
+            const cos = Math.cos(rad);
+            const sin = Math.sin(rad);
+
+            for (let i = pStart - 1; i < pEnd; i++) {
+                if (i < 0 || i >= pages.length) continue;
+                const page = pages[i];
+                const { width, height } = page.getSize();
+
+                let x, y;
+
+                if (wmType === 'text') {
+                    const textWidth = customFont.widthOfTextAtSize(textVal, fontSize);
+                    const textHeight = fontSize;
+
+                    if (position === 'center') {
+                        x = (width / 2) - (textWidth * cos - textHeight * sin) / 2;
+                        y = (height / 2) - (textWidth * sin + textHeight * cos) / 2;
+                    } else if (position === 'top') {
+                        x = (width - textWidth) / 2;
+                        y = height - textHeight - 50;
+                    } else if (position === 'bottom') {
+                        x = (width - textWidth) / 2;
+                        y = 50;
+                    } else {
+                        x = (width - textWidth) / 2;
+                        y = (height - textHeight) / 2;
+                    }
+
+                    const drawOptions = {
+                        x: x,
+                        y: y,
+                        size: fontSize,
+                        font: customFont,
+                        color: rgb(col.r, col.g, col.b),
+                        opacity: opacityVal,
+                        rotate: degrees(rotationDeg)
+                    };
+
+                    if (layer === 'under') {
+                        page.drawText(textVal, { ...drawOptions, sublayer: true });
+                    } else {
+                        page.drawText(textVal, drawOptions);
+                    }
+                    
+                } else if (wmType === 'image' && embeddedImg) {
+                    const origDims = embeddedImg.scale(1);
+                    const origWidth = origDims.width;
+                    const origHeight = origDims.height;
+                    const origAspectRatio = origHeight / origWidth;
+
+                    const targetWidth = (width * imgSizePercent) / 100;
+                    const targetHeight = targetWidth * origAspectRatio;
+
+                    let imgW = targetWidth;
+                    let imgH = targetHeight;
+
+                    if (imgH > height * 0.9) {
+                        imgH = height * 0.9;
+                        imgW = imgH / origAspectRatio;
+                    }
+
+                    if (position === 'center') {
+                        x = (width / 2) - (imgW * cos - imgH * sin) / 2;
+                        y = (height / 2) - (imgW * sin + imgH * cos) / 2;
+                    } else if (position === 'top') {
+                        x = (width - imgW) / 2;
+                        y = height - imgH - 30;
+                    } else if (position === 'bottom') {
+                        x = (width - imgW) / 2;
+                        y = 30;
+                    } else {
+                        x = (width - imgW) / 2;
+                        y = (height - imgH) / 2;
+                    }
+
+                    const imgOptions = {
+                        x: x,
+                        y: y,
+                        width: imgW,
+                        height: imgH,
+                        opacity: opacityVal,
+                        rotate: degrees(rotationDeg)
+                    };
+
+                    if (layer === 'under') {
+                        page.drawImage(embeddedImg, { ...imgOptions, sublayer: true });
+                    } else {
+                        page.drawImage(embeddedImg, imgOptions);
+                    }
+                }
+            }
+
+            return await pdfDocLib.save();
+        }
+
+        async function previewWatermark() {
+            const pdfInput = document.getElementById('wmPdfFile').files[0];
+            if (!pdfInput) { showPopup('error', 'Perhatian', 'Harap pilih file PDF terlebih dahulu!', [{ text: 'OK', class: 'btn-sna-red' }]); return; }
+
+            showPopup('loading', 'Memuat Pratinjau', 'Sedang merender halaman 1 dengan watermark...', []);
+            try {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                const modifiedBytes = await generateWatermarkedPdfBytes();
+                
+                const loadingTask = pdfjsLib.getDocument({ data: modifiedBytes });
+                const previewDoc = await loadingTask.promise;
+                const page = await previewDoc.getPage(1);
+                const viewport = page.getViewport({ scale: scale });
+                const canvas = document.getElementById('wm-preview-canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height; 
+                canvas.width = viewport.width;
+                
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+                document.getElementById('wm-preview-section').style.display = 'block';
+                closePopup();
+            } catch (err) {
+                closePopup();
+                showPopup('error', 'Gagal Pratinjau', 'Terjadi kesalahan: ' + err.message, [{ text: 'OK', class: 'btn-sna-red' }]);
+            }
+        }
+
+        async function executeWatermark() {
+            try {
+                showPopup('loading', 'Memproses Watermark', 'Menyiapkan file PDF...', []);
+                await new Promise(resolve => setTimeout(resolve, 100));
+                const modifiedBytes = await generateWatermarkedPdfBytes();
+
+                const blob = new Blob([modifiedBytes], { type: 'application/pdf' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'PDF_Watermark.pdf';
+                link.click();
+
+                closePopup();
+                showPopup('success', 'Berhasil Diberi Watermark!', 'Dokumen PDF berhasil diunduh dengan watermark.', [{ text: 'OK', class: 'btn-success' }]);
+            } catch (err) {
+                closePopup();
+                showPopup('error', 'Gagal Memproses', 'Terjadi kesalahan: ' + err.message, [{ text: 'OK', class: 'btn-sna-red' }]);
+            }
+        }
+
+        async function loadEditPreview() {
+            const pdfInput = document.getElementById('editPdfFile').files[0];
+            if (!pdfInput) { showPopup('error', 'Perhatian', 'Harap pilih file PDF terlebih dahulu!', [{ text: 'OK', class: 'btn-sna-red' }]); return; }
+            showPopup('loading', 'Memuat Dokumen', 'Mohon tunggu sebentar...', []);
+            try {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                editPdfArrayBuffer = await pdfInput.arrayBuffer();
+                const loadingTask = pdfjsLib.getDocument({ data: editPdfArrayBuffer });
+                editPdfDoc = await loadingTask.promise;
+                const page = await editPdfDoc.getPage(1);
+                const viewport = page.getViewport({ scale: scale });
+                const canvas = document.getElementById('edit-pdf-canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height; canvas.width = viewport.width;
+                const strikeCanvas = document.getElementById('strike-canvas');
+                strikeCanvas.height = viewport.height; strikeCanvas.width = viewport.width;
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+                strikeActions = []; actionHistory = [];
+                document.querySelectorAll('.draggable-text-box').forEach(el => el.remove());
+                currentStrikeColor = document.getElementById('globalStrikeColor').value || '#dc3545';
+                initStrikeDrawing(strikeCanvas);
+                document.getElementById('edit-workspace').style.display = 'block';
+                closePopup();
+            } catch (err) {
+                closePopup();
+                showPopup('error', 'Gagal Memuat', 'Terjadi kesalahan saat membaca dokumen PDF: ' + err.message, [{ text: 'OK', class: 'btn-sna-red' }]);
+            }
+        }
+
+        function initStrikeDrawing(canvas) {
+            const ctx = canvas.getContext('2d');
+            canvas.onmousedown = function(e) {
+                if (e.target !== canvas) return;
+                document.querySelectorAll('.draggable-text-box').forEach(b => b.classList.remove('active-focus'));
+                activeTextBox = null;
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                startX = e.clientX - rect.left; startY = e.clientY - rect.top;
+            };
+            canvas.onmousemove = function(e) {
+                if (!isDrawing) return;
+                const rect = canvas.getBoundingClientRect();
+                const currentX = e.clientX - rect.left; const currentY = e.clientY - rect.top;
+                redrawStrikes();
+                ctx.strokeStyle = currentStrikeColor; ctx.lineWidth = 3; ctx.beginPath();
+                let midY = (startY + currentY) / 2;
+                ctx.moveTo(Math.min(startX, currentX), midY); ctx.lineTo(Math.max(startX, currentX), midY); ctx.stroke();
+            };
+            canvas.onmouseup = function(e) {
+                if (!isDrawing) return; isDrawing = false;
+                const rect = canvas.getBoundingClientRect();
+                const endX = e.clientX - rect.left; const endY = e.clientY - rect.top;
+                let midY = (startY + endY) / 2;
+                strikeActions.push({ x1: Math.min(startX, endX), x2: Math.max(startX, endX), y: midY, color: currentStrikeColor });
+                actionHistory.push('strike'); redrawStrikes();
+            };
+            canvas.onmouseleave = function() { if (isDrawing) { isDrawing = false; redrawStrikes(); } };
+        }
+
+        function redrawStrikes() {
+            const canvas = document.getElementById('strike-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            strikeActions.forEach(action => {
+                ctx.strokeStyle = action.color; ctx.lineWidth = 3; ctx.beginPath();
+                ctx.moveTo(action.x1, action.y); ctx.lineTo(action.x2, action.y); ctx.stroke();
+            });
+        }
+
+        function addTextBox() {
+            const container = document.getElementById('edit-pdf-container');
+            document.querySelectorAll('.draggable-text-box').forEach(b => b.classList.remove('active-focus'));
+            
+            const div = document.createElement('div');
+            div.className = 'draggable-text-box active-focus';
+            div.style.left = '60px'; div.style.top = '60px'; div.style.width = '180px'; div.style.height = '45px'; div.dataset.rotation = '0';
+            
+            const textarea = document.createElement('textarea'); 
+            textarea.placeholder = 'Ketik teks...';
+            const currentSize = document.getElementById('globalFontSize').value;
+            const currentColor = document.getElementById('globalTextColor').value;
+            textarea.style.fontSize = currentSize + 'px'; 
+            textarea.style.color = currentColor;
+
+            textarea.onfocus = function() {
+                document.querySelectorAll('.draggable-text-box').forEach(b => b.classList.remove('active-focus'));
+                div.classList.add('active-focus'); activeTextBox = div;
+                document.getElementById('globalFontSize').value = parseInt(textarea.style.fontSize) || 14;
+                document.getElementById('globalTextColor').value = textarea.style.color || '#dc3545';
+            };
+
+            textarea.onblur = function() {
+                setTimeout(() => {
+                    if (document.activeElement !== textarea) {
+                        div.classList.remove('active-focus');
+                    }
+                }, 150);
+            };
+
+            const deleteBtn = document.createElement('button'); 
+            deleteBtn.type = 'button'; 
+            deleteBtn.className = 'text-delete-btn'; 
+            deleteBtn.innerHTML = '&times;';
+            deleteBtn.title = 'Hapus Teks Ini';
+            deleteBtn.onclick = function(e) { e.stopPropagation(); div.remove(); activeTextBox = null; };
+
+            const resizer = document.createElement('div'); resizer.className = 'text-resizer-se';
+            const rotateHandle = document.createElement('div'); rotateHandle.className = 'text-rotate-handle'; rotateHandle.title = 'Tarik untuk putar (Rotate 360°)';
+            
+            div.appendChild(deleteBtn); 
+            div.appendChild(textarea); 
+            div.appendChild(resizer); 
+            div.appendChild(rotateHandle);
+            
+            container.appendChild(div); 
+            activeTextBox = div; 
+            actionHistory.push('text');
+
+            makeTextInteractive(div, resizer, rotateHandle, textarea); 
+            textarea.focus();
+        }
+
+        function updateSelectedTextProperties() {
+            if (activeTextBox) {
+                const textarea = activeTextBox.querySelector('textarea');
+                const newSize = document.getElementById('globalFontSize').value;
+                const newColor = document.getElementById('globalTextColor').value;
+                if (textarea) { textarea.style.fontSize = newSize + 'px'; textarea.style.color = newColor; }
+            }
+        }
+
+        function makeTextInteractive(elmnt, resizer, rotator, textarea) {
+            let startX, startY, startWidth, startHeight, startLeft, startTop;
+            
+            elmnt.onmousedown = function(e) {
+                document.querySelectorAll('.draggable-text-box').forEach(b => b.classList.remove('active-focus'));
+                elmnt.classList.add('active-focus'); activeTextBox = elmnt;
+                if (e.target.tagName === 'TEXTAREA' || e.target === resizer || e.target === rotator || e.target.tagName === 'BUTTON') return;
+                e.preventDefault(); startX = e.clientX; startY = e.clientY; startLeft = elmnt.offsetLeft; startTop = elmnt.offsetTop;
+                document.onmouseup = closeDragElement; document.onmousemove = elementDrag;
+            };
+            function elementDrag(e) { e.preventDefault(); elmnt.style.left = (startLeft + e.clientX - startX) + "px"; elmnt.style.top = (startTop + e.clientY - startY) + "px"; }
+            function closeDragElement() { document.onmouseup = null; document.onmousemove = null; }
+
+            resizer.onmousedown = function(e) {
+                e.stopPropagation(); e.preventDefault(); startX = e.clientX; startY = e.clientY; startWidth = elmnt.offsetWidth; startHeight = elmnt.offsetHeight;
+                document.onmouseup = closeResizeElement; document.onmousemove = elementResize;
+            };
+            function elementResize(e) {
+                e.preventDefault();
+                let newWidth = startWidth + (e.clientX - startX); 
+                let newHeight = startHeight + (e.clientY - startY);
+                if (newWidth > 60) elmnt.style.width = newWidth + "px"; 
+                if (newHeight > 25) elmnt.style.height = newHeight + "px";
+            }
+            function closeResizeElement() { document.onmouseup = null; document.onmousemove = null; }
+
+            rotator.onmousedown = function(e) {
+                e.stopPropagation(); e.preventDefault();
+                const rect = elmnt.getBoundingClientRect(); const centerX = rect.left + rect.width / 2; const centerY = rect.top + rect.height / 2;
+                document.onmouseup = closeRotateElement;
+                document.onmousemove = function(moveEvent) {
+                    moveEvent.preventDefault();
+                    const radians = Math.atan2(moveEvent.clientY - centerY, moveEvent.clientX - centerX);
+                    let degrees = (radians * (180 / Math.PI)) + 90; if (degrees < 0) degrees += 360;
+                    elmnt.dataset.rotation = Math.round(degrees); elmnt.style.transform = `rotate(${Math.round(degrees)}deg)`;
+                };
+            };
+            function closeRotateElement() { document.onmouseup = null; document.onmousemove = null; }
+        }
+
+        function undoLastAction() {
+            if (actionHistory.length > 0) {
+                const lastType = actionHistory.pop();
+                if (lastType === 'strike') { strikeActions.pop(); redrawStrikes(); }
+                else if (lastType === 'text') { const boxes = document.querySelectorAll('.draggable-text-box'); if (boxes.length > 0) boxes[boxes.length - 1].remove(); }
+            }
+        }
+
+        function clearAllEdits() { strikeActions = []; actionHistory = []; redrawStrikes(); document.querySelectorAll('.draggable-text-box').forEach(el => el.remove()); }
+
+        function hexToRgbNormalized(hex) {
+            let c = hex.replace('#', ''); if (c.length === 3) c = c.split('').map(x => x + x).join('');
+            const num = parseInt(c, 16); return { r: ((num >> 16) & 255) / 255, g: ((num >> 8) & 255) / 255, b: (num & 255) / 255 };
+        }
+
+        async function processAndDownloadEditedPDF() {
+            const textBoxes = document.querySelectorAll('.draggable-text-box');
+            if (strikeActions.length === 0 && textBoxes.length === 0) { showPopup('error', 'Perhatian', 'Belum ada coretan atau teks yang ditambahkan!', [{ text: 'OK', class: 'btn-sna-red' }]); return; }
+            showPopup('loading', 'Memproses PDF', 'Menyimpan teks & coretan dan menyiapkan unduhan...', []);
+            try {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                const canvas = document.getElementById('edit-pdf-canvas');
+                const { PDFDocument, rgb, degrees } = PDFLib;
+                const pdfDocLib = await PDFDocument.load(editPdfArrayBuffer);
+                const pages = pdfDocLib.getPages(); const firstPage = pages[0];
+                const { width: pdfWidth, height: pdfHeight } = firstPage.getSize();
+                
+                strikeActions.forEach(action => {
+                    const x = (action.x1 / canvas.width) * pdfWidth; const width = ((action.x2 - action.x1) / canvas.width) * pdfWidth;
+                    const y = pdfHeight - ((action.y / canvas.height) * pdfHeight); const c = hexToRgbNormalized(action.color);
+                    firstPage.drawLine({ start: { x: x, y: y }, end: { x: x + width, y: y }, thickness: 2.5, color: rgb(c.r, c.g, c.b) });
+                });
+
+                for (let box of textBoxes) {
+                    const textarea = box.querySelector('textarea'); const textValue = textarea.value.trim(); if (!textValue) continue;
+                    const boxRect = box.getBoundingClientRect(); const canvasRect = canvas.getBoundingClientRect();
+                    const leftOnCanvas = boxRect.left - canvasRect.left; const topOnCanvas = boxRect.top - canvasRect.top;
+                    const x = (leftOnCanvas / canvas.width) * pdfWidth; const renderHeight = (box.offsetHeight / canvas.height) * pdfHeight;
+                    const y = pdfHeight - ((topOnCanvas / canvas.height) * pdfHeight) - renderHeight + 8;
+                    const rotationAngle = parseInt(box.dataset.rotation || '0'); const fontSizePx = parseInt(textarea.style.fontSize) || 14;
+                    const fontPdfSize = (fontSizePx / canvas.height) * pdfHeight * 1.2;
+                    const colHex = textarea.style.color || '#dc3545'; const c = hexToRgbNormalized(colHex);
+                    firstPage.drawText(textValue, { x: x, y: y, size: Math.max(10, fontPdfSize), color: rgb(c.r, c.g, c.b), rotate: degrees(rotationAngle) });
+                }
+                const modifiedPdfBytes = await pdfDocLib.save();
+                const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'PDF_Hasil_Edit.pdf'; link.click();
+                closePopup();
+                showPopup('success', 'Berhasil Diunduh!', 'Dokumen PDF berhasil disimpan.', [{ text: 'OK', class: 'btn-success', callback: function() { document.getElementById('edit-workspace').style.display = 'none'; document.getElementById('editPdfFile').value = ''; editPdfArrayBuffer = null; clearAllEdits(); } }]);
+            } catch (error) { closePopup(); showPopup('error', 'Gagal Memproses', 'Terjadi kesalahan: ' + error.message, [{ text: 'OK', class: 'btn-sna-red' }]); }
+        }
+
+        function cancelEditProcess() {
+            showPopup('confirm', 'Batalkan Perubahan?', 'Apakah Anda yakin ingin membatalkan semua perubahan?', [{ text: 'Ya, Batalkan', class: 'btn-danger', callback: function() { document.getElementById('edit-workspace').style.display = 'none'; document.getElementById('editPdfFile').value = ''; editPdfArrayBuffer = null; clearAllEdits(); } }, { text: 'Lanjutkan', class: 'btn-secondary', callback: null }]);
+        }
+
+        async function loadPageManager() {
+            const pdfInput = document.getElementById('managePdfFile').files[0];
+            if (!pdfInput) { showPopup('error', 'Perhatian', 'Harap pilih file PDF terlebih dahulu!', [{ text: 'OK', class: 'btn-sna-red' }]); return; }
+            showPopup('loading', 'Memuat Halaman', 'Sedang merender thumbnail halaman dokumen...', []);
+            try {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                managePdfArrayBuffer = await pdfInput.arrayBuffer();
+                await renderPageManagerGrid();
+                document.getElementById('page-manager-workspace').style.display = 'block'; closePopup();
+            } catch (err) { closePopup(); showPopup('error', 'Gagal Memuat', 'Terjadi kesalahan: ' + err.message, [{ text: 'OK', class: 'btn-sna-red' }]); }
+        }
+
+        async function renderPageManagerGrid() {
+            const gridContainer = document.getElementById('page-manage-grid');
+            const insertAfterSelect = document.getElementById('insertAfterIndex');
+            gridContainer.innerHTML = ''; insertAfterSelect.innerHTML = '';
+            const loadingTask = pdfjsLib.getDocument({ data: managePdfArrayBuffer });
+            const pdf = await loadingTask.promise; const numPages = pdf.numPages;
+            const optFirst = document.createElement('option'); optFirst.value = '0'; optFirst.innerText = 'Di awal dokumen (Sebelum Hal. 1)'; insertAfterSelect.appendChild(optFirst);
+            for (let i = 1; i <= numPages; i++) {
+                const page = await pdf.getPage(i); const viewport = page.getViewport({ scale: 0.35 });
+                const canvas = document.createElement('canvas'); const context = canvas.getContext('2d');
+                canvas.height = viewport.height; canvas.width = viewport.width;
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+                const thumbData = canvas.toDataURL();
+                const card = document.createElement('div'); card.className = 'page-manage-card';
+                card.innerHTML = `<span class="page-badge">Hal. ${i}</span>${numPages > 1 ? `<button type="button" class="page-delete-btn" title="Hapus Halaman" data-page-index="${i - 1}">&times;</button>` : ''}<img src="${thumbData}" class="page-thumbnail" alt="Hal ${i}"><div class="small fw-semibold text-secondary">Halaman ${i}</div>`;
+                gridContainer.appendChild(card);
+                if (i < numPages) { const opt = document.createElement('option'); opt.value = i; opt.innerText = `Setelah Halaman ${i}`; insertAfterSelect.appendChild(opt); }
+            }
+            gridContainer.querySelectorAll('.page-delete-btn').forEach(delBtn => { delBtn.addEventListener('click', function() { deletePage(parseInt(this.getAttribute('data-page-index'))); }); });
+            const optLast = document.createElement('option'); optLast.value = numPages; optLast.innerText = `Di akhir dokumen (Setelah Hal. ${numPages})`; insertAfterSelect.appendChild(optLast); insertAfterSelect.value = numPages;
+        }
+
+        function toggleInsertSourceInput() {
+            const type = document.getElementById('insertType').value; const wrapper = document.getElementById('insertSourceWrapper');
+            const label = document.getElementById('insertSourceLabel'); const input = document.getElementById('insertSourceFile');
+            if (type === 'blank') { wrapper.style.display = 'none'; }
+            else if (type === 'pdf') { wrapper.style.display = 'block'; label.innerText = 'Pilih File PDF Lain:'; input.accept = 'application/pdf'; }
+            else if (type === 'image') { wrapper.style.display = 'block'; label.innerText = 'Pilih Gambar (JPG/PNG):'; input.accept = 'image/*'; }
+        }
+
+        async function deletePage(pageIndex) {
+            showPopup('confirm', 'Hapus Halaman?', `Apakah Anda yakin ingin menghapus halaman ${pageIndex + 1}?`, [{ text: 'Ya, Hapus', class: 'btn-danger', callback: async function() {
+                showPopup('loading', 'Memproses', 'Menghapus halaman...', []);
+                const { PDFDocument } = PDFLib; const pdfDoc = await PDFDocument.load(managePdfArrayBuffer);
+                pdfDoc.removePage(pageIndex); managePdfArrayBuffer = await pdfDoc.save();
+                await renderPageManagerGrid(); closePopup();
+            } }, { text: 'Batal', class: 'btn-secondary', callback: null }]);
+        }
+
+        async function executeInsertPage() {
+            const type = document.getElementById('insertType').value; const insertAfter = parseInt(document.getElementById('insertAfterIndex').value);
+            const sourceFileInput = document.getElementById('insertSourceFile').files[0];
+            if ((type === 'pdf' || type === 'image') && !sourceFileInput) { showPopup('error', 'Perhatian', 'Harap pilih file sumber terlebih dahulu!', [{ text: 'OK', class: 'btn-sna-red' }]); return; }
+            showPopup('loading', 'Menyisipkan Halaman', 'Mohon tunggu sebentar...', []);
+            try {
+                const { PDFDocument } = PDFLib; const pdfDoc = await PDFDocument.load(managePdfArrayBuffer);
+                if (type === 'blank') { pdfDoc.insertPage(insertAfter, [595.28, 841.89]); }
+                else if (type === 'pdf') {
+                    const arrayBuf = await sourceFileInput.arrayBuffer(); const externalPdf = await PDFDocument.load(arrayBuf);
+                    const copiedPages = await pdfDoc.copyPages(externalPdf, externalPdf.getPageIndices());
+                    let currentIndex = insertAfter; for (let p of copiedPages) { pdfDoc.insertPage(currentIndex, p); currentIndex++; }
+                } else if (type === 'image') {
+                    const arrayBuf = await sourceFileInput.arrayBuffer(); let embeddedImage;
+                    if (sourceFileInput.type === 'image/png') { embeddedImage = await pdfDoc.embedPng(arrayBuf); } else { embeddedImage = await pdfDoc.embedJpg(arrayBuf); }
+                    const newPage = pdfDoc.insertPage(insertAfter, [595.28, 841.89]); const imgDims = embeddedImage.scaleToFit(500, 750);
+                    newPage.drawImage(embeddedImage, { x: (595.28 - imgDims.width) / 2, y: (841.89 - imgDims.height) / 2, width: imgDims.width, height: imgDims.height });
+                }
+                managePdfArrayBuffer = await pdfDoc.save(); await renderPageManagerGrid(); document.getElementById('insertSourceFile').value = '';
+                closePopup(); showPopup('success', 'Berhasil Disisipkan!', 'Halaman baru berhasil ditambahkan.', [{ text: 'OK', class: 'btn-success' }]);
+            } catch (err) { closePopup(); showPopup('error', 'Gagal', 'Terjadi kesalahan: ' + err.message, [{ text: 'OK', class: 'btn-sna-red' }]); }
+        }
+
+        async function processAndDownloadManagedPDF() {
+            showPopup('loading', 'Menyiapkan Unduhan', 'Mengompilasi dokumen PDF...', []); await new Promise(resolve => setTimeout(resolve, 100));
+            const blob = new Blob([managePdfArrayBuffer], { type: 'application/pdf' });
+            const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'PDF_Manajemen_Halaman.pdf'; link.click();
+            closePopup(); showPopup('success', 'Berhasil Diunduh!', 'Dokumen PDF telah diunduh.', [{ text: 'OK', class: 'btn-success', callback: function() { document.getElementById('page-manager-workspace').style.display = 'none'; document.getElementById('managePdfFile').value = ''; managePdfArrayBuffer = null; } }]);
+        }
+
+        function cancelPageManageProcess() {
+            showPopup('confirm', 'Batalkan Perubahan?', 'Apakah Anda yakin ingin membatalkan manajemen halaman?', [{ text: 'Ya, Batalkan', class: 'btn-danger', callback: function() { document.getElementById('page-manager-workspace').style.display = 'none'; document.getElementById('managePdfFile').value = ''; managePdfArrayBuffer = null; } }, { text: 'Lanjutkan', class: 'btn-secondary', callback: null }]);
+        }
+
+        async function loadPreview() {
+            const pdfInput = document.getElementById('pdfFile').files[0]; const sigInput = document.getElementById('sigFiles').files;
+            if (!pdfInput || sigInput.length === 0) { showPopup('error', 'Perhatian', 'Harap pilih file PDF dan minimal satu gambar tanda tangan!', [{ text: 'OK', class: 'btn-sna-red' }]); return; }
+            showPopup('loading', 'Memuat Dokumen', 'Mohon tunggu sebentar...', []);
+            try {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                pdfArrayBuffer = await pdfInput.arrayBuffer();
+                const loadingTask = pdfjsLib.getDocument({data: pdfArrayBuffer}); pdfDoc = await loadingTask.promise;
+                await renderPage(1); loadSignaturesToUI(sigInput);
+                document.getElementById('workspace').style.display = 'block'; closePopup();
+            } catch (err) { closePopup(); showPopup('error', 'Gagal Memuat', 'Terjadi kesalahan: ' + err.message, [{ text: 'OK', class: 'btn-sna-red' }]); }
+        }
+
+        function renderPage(num) {
+            return new Promise((resolve, reject) => {
+                pdfDoc.getPage(num).then(function(page) {
+                    const viewport = page.getViewport({scale: scale});
+                    const canvas = document.getElementById('pdf-canvas'); const context = canvas.getContext('2d');
+                    canvas.height = viewport.height; canvas.width = viewport.width;
+                    page.render({canvasContext: context, viewport: viewport}).promise.then(() => { resolve(); }).catch(reject);
+                }).catch(reject);
+            });
+        }
+
+        function loadSignaturesToUI(files) {
+            const container = document.getElementById('pdf-container');
+            document.querySelectorAll('.draggable-img').forEach(el => el.remove());
+            Array.from(files).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div'); div.className = 'draggable-img';
+                    div.style.left = (40 + (index * 40)) + 'px'; div.style.top = (40 + (index * 40)) + 'px'; div.style.width = '120px';
+                    
+                    const img = document.createElement('img'); img.src = e.target.result;
+                    const setInitialSize = () => {
+                        let aspectRatio = img.naturalHeight / img.naturalWidth; if (!aspectRatio || isNaN(aspectRatio)) aspectRatio = 0.5;
+                        div.style.height = (120 * aspectRatio) + 'px';
+                    };
+                    if (img.complete) { setInitialSize(); } else { img.onload = setInitialSize; }
+                    
+                    const btn = document.createElement('button'); 
+                    btn.type = 'button'; 
+                    btn.className = 'delete-btn'; 
+                    btn.innerHTML = '&times;';
+                    btn.title = 'Hapus Tanda Tangan Ini';
+                    btn.onclick = function(e) { e.stopPropagation(); div.remove(); };
+                    
+                    const resizer = document.createElement('div'); resizer.className = 'resizer-se';
+                    div.appendChild(btn); div.appendChild(img); div.appendChild(resizer); container.appendChild(div);
+                    makeInteractive(div, resizer);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function makeInteractive(elmnt, resizer) {
+            let startX, startY, startWidth, startHeight, startLeft, startTop;
+            elmnt.onmousedown = function(e) {
+                document.querySelectorAll('.draggable-img').forEach(b => b.classList.remove('active-focus'));
+                elmnt.classList.add('active-focus');
+                if (e.target.tagName === 'BUTTON' || e.target === resizer) return;
+                e.preventDefault(); startX = e.clientX; startY = e.clientY; startLeft = elmnt.offsetLeft; startTop = elmnt.offsetTop;
+                document.onmouseup = closeDragElement; document.onmousemove = elementDrag;
+            };
+            function elementDrag(e) { e.preventDefault(); elmnt.style.left = (startLeft + e.clientX - startX) + "px"; elmnt.style.top = (startTop + e.clientY - startY) + "px"; }
+            function closeDragElement() { document.onmouseup = null; document.onmousemove = null; }
+            resizer.onmousedown = function(e) {
+                e.stopPropagation(); e.preventDefault(); startX = e.clientX; startY = e.clientY; startWidth = elmnt.offsetWidth; startHeight = elmnt.offsetHeight;
+                document.onmouseup = closeResizeElement; document.onmousemove = elementResize;
+            };
+            function elementResize(e) {
+                e.preventDefault();
+                let dx = e.clientX - startX; let aspectRatio = startHeight / startWidth;
+                let newWidth = startWidth + dx; let newHeight = newWidth * aspectRatio;
+                if (newWidth > 40 && newWidth < 800) { elmnt.style.width = newWidth + "px"; elmnt.style.height = newHeight + "px"; }
+            }
+            function closeResizeElement() { document.onmouseup = null; document.onmousemove = null; }
+        }
+
+        async function processAndDownloadPDF() {
+            try {
+                const sigElements = document.querySelectorAll('.draggable-img');
+                if (sigElements.length === 0) { showPopup('error', 'Perhatian', 'Tidak ada tanda tangan yang ditempatkan!', [{ text: 'OK', class: 'btn-sna-red' }]); return; }
+                showPopup('loading', 'Memproses PDF', 'Menempelkan tanda tangan dan menyiapkan unduhan...', []); await new Promise(resolve => setTimeout(resolve, 100));
+                const canvas = document.getElementById('pdf-canvas');
+                const { PDFDocument } = PDFLib;
+                const pdfDocLib = await PDFDocument.load(pdfArrayBuffer);
+                const pages = pdfDocLib.getPages(); const firstPage = pages[0];
+                const { width: pdfWidth, height: pdfHeight } = firstPage.getSize();
+                for (let el of sigElements) {
+                    const imgElement = el.querySelector('img');
+                    const elRect = el.getBoundingClientRect(); const canvasRect = canvas.getBoundingClientRect();
+                    const leftOnCanvas = elRect.left - canvasRect.left; const topOnCanvas = elRect.top - canvasRect.top;
+                    const elDisplayWidth = el.offsetWidth; const elDisplayHeight = el.offsetHeight;
+                    const x = (leftOnCanvas / canvas.width) * pdfWidth;
+                    const renderHeight = (elDisplayHeight / canvas.height) * pdfHeight;
+                    const y = pdfHeight - ((topOnCanvas / canvas.height) * pdfHeight) - renderHeight;
+                    const width = (elDisplayWidth / canvas.width) * pdfWidth; const height = renderHeight;
+                    const imgBytes = await fetch(imgElement.src).then(res => res.arrayBuffer());
+                    let embeddedImage = imgElement.src.includes('image/png') || imgElement.src.includes('data:image/png') ? await pdfDocLib.embedPng(imgBytes) : await pdfDocLib.embedJpg(imgBytes);
+                    firstPage.drawImage(embeddedImage, { x, y, width, height });
+                }
+                const modifiedPdfBytes = await pdfDocLib.save();
+                const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'PDF_Tertanda_Tangan.pdf'; link.click();
+                closePopup();
+                showPopup('success', 'Berhasil Diunduh!', 'Dokumen PDF berhasil ditandatangani.', [{ text: 'OK', class: 'btn-success', callback: function() { document.getElementById('workspace').style.display = 'none'; document.getElementById('pdfFile').value = ''; document.getElementById('sigFiles').value = ''; document.querySelectorAll('.draggable-img').forEach(el => el.remove()); pdfArrayBuffer = null; } }]);
+            } catch (error) { closePopup(); showPopup('error', 'Gagal Memproses', 'Terjadi kesalahan: ' + error.message, [{ text: 'OK', class: 'btn-sna-red' }]); }
+        }
+
+        function cancelProcess() {
+            showPopup('confirm', 'Batalkan Proses?', 'Apakah Anda yakin ingin membatalkan?', [{ text: 'Ya, Batalkan', class: 'btn-danger', callback: function() { document.getElementById('workspace').style.display = 'none'; document.getElementById('pdfFile').value = ''; document.getElementById('sigFiles').value = ''; document.querySelectorAll('.draggable-img').forEach(el => el.remove()); pdfArrayBuffer = null; } }, { text: 'Lanjutkan', class: 'btn-secondary', callback: null }]);
+        }
+
+        async function handleMergeFilesSelect(input) {
+            if (input.files && input.files.length > 0) {
+                for (let file of Array.from(input.files)) { selectedMergeFiles.push({ file: file, thumbnail: '' }); }
+                input.value = ''; await renderMergeFileGrid();
+            }
+        }
+
+        async function renderMergeFileGrid() {
+            const gridContainer = document.getElementById('merge-file-grid');
+            const previewSection = document.getElementById('merge-preview-section');
+            const executeBtn = document.getElementById('btn-execute-merge');
+            gridContainer.innerHTML = '';
+            if (selectedMergeFiles.length === 0) { previewSection.style.display = 'none'; executeBtn.style.display = 'none'; return; }
+            previewSection.style.display = 'block'; executeBtn.style.display = 'block';
+            for (let index = 0; index < selectedMergeFiles.length; index++) {
+                let item = selectedMergeFiles[index];
+                if (!item.thumbnail) {
+                    try {
+                        const buffer = await item.file.arrayBuffer();
+                        const loadingTask = pdfjsLib.getDocument({ data: buffer });
+                        const pdf = await loadingTask.promise; const page = await pdf.getPage(1);
+                        const viewport = page.getViewport({ scale: 0.4 });
+                        const canvas = document.createElement('canvas'); const context = canvas.getContext('2d');
+                        canvas.height = viewport.height; canvas.width = viewport.width;
+                        await page.render({ canvasContext: context, viewport: viewport }).promise;
+                        item.thumbnail = canvas.toDataURL();
+                    } catch (e) { item.thumbnail = 'https://via.placeholder.com/150?text=PDF'; }
+                }
+                const card = document.createElement('div'); card.className = 'merge-card'; card.setAttribute('draggable', 'true'); card.dataset.index = index;
+                card.innerHTML = `<span class="merge-badge">${index + 1}</span><button type="button" class="merge-remove-btn" title="Hapus" data-merge-index="${index}">&times;</button><img src="${item.thumbnail}" class="merge-thumbnail" alt="Thumbnail"><div class="merge-filename" title="${item.file.name}">${item.file.name}</div>`;
+                card.addEventListener('dragstart', function(e) { draggedIndex = index; card.classList.add('dragging'); });
+                card.addEventListener('dragend', function(e) { card.classList.remove('dragging'); draggedIndex = null; document.querySelectorAll('.merge-card').forEach(c => c.classList.remove('merge-card-over')); });
+                card.addEventListener('dragover', function(e) { e.preventDefault(); });
+                card.addEventListener('dragenter', function(e) { e.preventDefault(); if (draggedIndex !== index) card.classList.add('merge-card-over'); });
+                card.addEventListener('dragleave', function(e) { card.classList.remove('merge-card-over'); });
+                card.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    if (draggedIndex !== null && draggedIndex !== index) {
+                        const movedItem = selectedMergeFiles.splice(draggedIndex, 1)[0];
+                        selectedMergeFiles.splice(index, 0, movedItem); renderMergeFileGrid();
+                    }
+                });
+                gridContainer.appendChild(card);
+            }
+            gridContainer.querySelectorAll('.merge-remove-btn').forEach(rmBtn => {
+                rmBtn.addEventListener('click', function(e) {
+                    e.stopPropagation(); const mIdx = parseInt(this.getAttribute('data-merge-index'));
+                    selectedMergeFiles.splice(mIdx, 1); renderMergeFileGrid();
+                });
+            });
+        }
+
+        async function mergePDFs() {
+            if (selectedMergeFiles.length < 2) { showPopup('error', 'Perhatian', 'Harap pilih minimal 2 file PDF untuk digabungkan!', [{ text: 'OK', class: 'btn-sna-red' }]); return; }
+            showPopup('loading', 'Menggabungkan PDF', 'Sedang memproses file PDF...', []);
+            try {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                const { PDFDocument } = PDFLib; const mergedPdf = await PDFDocument.create();
+                for (let item of selectedMergeFiles) {
+                    const fileBuffer = await item.file.arrayBuffer();
+                    const pdf = await PDFDocument.load(fileBuffer);
+                    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                    copiedPages.forEach((page) => mergedPdf.addPage(page));
+                }
+                const mergedPdfBytes = await mergedPdf.save();
+                const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'PDF_Gabungan.pdf'; link.click();
+                closePopup();
+                showPopup('success', 'Berhasil Digabung!', 'File PDF berhasil digabungkan dan diunduh.', [{ text: 'OK', class: 'btn-success', callback: function() { document.getElementById('mergeFiles').value = ''; selectedMergeFiles = []; renderMergeFileGrid(); } }]);
+            } catch (error) { closePopup(); showPopup('error', 'Gagal Menggabungkan', 'Terjadi kesalahan: ' + error.message, [{ text: 'OK', class: 'btn-sna-red' }]); }
+        }
+    </script>
+</body>
+</html>
